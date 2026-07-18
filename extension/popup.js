@@ -12,7 +12,8 @@ const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
 let searchTimer;
 let latestSearchRequest = 0;
 const DEFAULT_MAX_RESULTS = 20;
-const MAX_RESULTS = 100;
+// 与本机服务的保护上限一致，避免一次渲染过多完整文件路径。
+const MAX_CONFIGURABLE_RESULTS = 100;
 
 function sendNativeMessage(message) {
   const response = new Promise((resolve, reject) => {
@@ -54,7 +55,7 @@ function renderResults(paths) {
 function normalizeMaxResults(value) {
   const number = Number(value);
   if (!Number.isInteger(number)) return DEFAULT_MAX_RESULTS;
-  return Math.max(1, Math.min(number, MAX_RESULTS));
+  return Math.max(1, Math.min(number, MAX_CONFIGURABLE_RESULTS));
 }
 
 function renderIndexStatus(config) {

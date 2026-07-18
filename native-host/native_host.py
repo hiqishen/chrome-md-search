@@ -23,6 +23,8 @@ else:
 CONFIG_PATH = APP_DATA_DIR / "config.json"
 INDEX_PATH = CONFIG_PATH.with_name("index.sqlite3")
 DEFAULT_MAX_RESULTS = 20
+# 防止单次搜索返回海量路径，拖慢 Native Messaging 与 Chrome 候选渲染。
+# 这是单次返回数上限，不影响 SQLite 索引中的文件总量。
 MAX_RESULTS = 100
 MAX_VIEW_FILE_SIZE = 5 * 1024 * 1024
 

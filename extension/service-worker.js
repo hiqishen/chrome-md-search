@@ -3,7 +3,8 @@ const INDEX_REFRESH_ALARM = "refresh-markdown-index";
 const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
 const NO_RESULT_CONTENT = "local-markdown-search:no-result";
 const DEFAULT_MAX_RESULTS = 20;
-const MAX_RESULTS = 100;
+// 与本机服务的保护上限一致，避免一次向地址栏传入过多完整文件路径。
+const MAX_CONFIGURABLE_RESULTS = 100;
 let latestOmniboxRequest = 0;
 
 function sendNativeMessage(message) {
@@ -47,7 +48,7 @@ async function getSearchOptions() {
 function normalizeMaxResults(value) {
   const number = Number(value);
   if (!Number.isInteger(number)) return DEFAULT_MAX_RESULTS;
-  return Math.max(1, Math.min(number, MAX_RESULTS));
+  return Math.max(1, Math.min(number, MAX_CONFIGURABLE_RESULTS));
 }
 
 function scheduleIndexRefresh() {
