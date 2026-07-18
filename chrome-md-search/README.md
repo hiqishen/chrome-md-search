@@ -47,3 +47,9 @@ rm "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.loc
 ```text
 ~/Library/Application Support/LocalMarkdownSearch/config.json
 ```
+
+## 自动发布
+
+执行 `zsh chrome-md-search/scripts/package.sh` 会生成 Chrome 商店上传包和 macOS 本机服务安装包。推送 `v*` 标签会由 GitHub Actions 自动创建 GitHub Release 并上传这两个包。
+
+Chrome 商店工作流位于 `.github/workflows/publish-chrome-web-store.yml`。首次需要在 Developer Dashboard 手动创建条目、填写 Store listing 和 Privacy，并在仓库的 `chrome-web-store` Environment 中添加以下 secrets：`CWS_CLIENT_ID`、`CWS_CLIENT_SECRET`、`CWS_REFRESH_TOKEN`、`CWS_PUBLISHER_ID`、`CWS_EXTENSION_ID`。之后从 Actions 手动运行该工作流即可自动上传并提交审核；默认使用 `STAGED_PUBLISH`，审核通过后仍由你确认公开发布。

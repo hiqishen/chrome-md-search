@@ -1,0 +1,62 @@
+name: Publish to Chrome Web Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_type:
+        description: "审核通过后的发布方式"
+        required: true
+        default: "STAGED_PUBLISH"
+        type: choice
+        options:
+          - STAGED_PUBLISH
+          - DEFAULT_PUBLISH
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: macos-latest
+    environment: chrome-web-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Chrome extension archive
+        run: zsh chrome-md-search/scripts/package.sh
+      - name: Get Chrome Web Store access token
+        id: token
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          response=$(curl --fail-with-body --silent --show-error \
+            --request POST https://oauth2.googleapis.com/token \
+            --data-urlencode "client_id=$CWS_CLIENT_ID" \
+            --data-urlencode "client_secret=$CWS_CLIENT_SECRET" \
+            --data-urlencode "refresh_token=$CWS_REFRESH_TOKEN" \
+            --data-urlencode "grant_type=refresh_token")
+          token=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])' <<< "$response")
+          echo "access_token=$token" >> "$GITHUB_OUTPUT"
+      - name: Upload package and submit to Chrome Web Store
+        env:
+          ACCESS_TOKEN: ${{ steps.token.outputs.access_token }}
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          PUBLISH_TYPE: ${{ inputs.publish_type }}
+        run: |
+          item="publishers/$CWS_PUBLISHER_ID/items/$CWS_EXTENSION_ID"
+          archive=chrome-md-search/dist/local-markdown-search-chrome-extension.zip
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --header "X-Goog-Upload-Protocol: raw" \
+            --header "X-Goog-Upload-File-Name: $(basename "$archive")" \
+            --upload-file "$archive" \
+            "https://chromewebstore.googleapis.com/upload/v2/$item:upload"
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $ACCESS_TOKEN" \
+            --header "Content-Type: application/json" \
+            --data "{\"publishType\":\"$PUBLISH_TYPE\"}" \
+            "https://chromewebstore.googleapis.com/v2/$item:publish"
