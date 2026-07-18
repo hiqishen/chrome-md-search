@@ -69,6 +69,7 @@ def open_index() -> sqlite3.Connection:
     connection.execute("PRAGMA busy_timeout=10000")
     connection.execute("CREATE TABLE IF NOT EXISTS files (path TEXT PRIMARY KEY, filename TEXT NOT NULL, root TEXT NOT NULL, modified_ns INTEGER NOT NULL, size INTEGER NOT NULL)")
     connection.execute("CREATE INDEX IF NOT EXISTS files_filename ON files(filename)")
+    connection.execute("CREATE TABLE IF NOT EXISTS selections (path TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_selected REAL NOT NULL)")
     connection.execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
     return connection
 
@@ -112,9 +113,46 @@ def refresh_index() -> dict[str, Any]:
     with open_index() as connection:
         connection.execute("DELETE FROM files")
         connection.executemany("INSERT INTO files(path, filename, root, modified_ns, size) VALUES (?, ?, ?, ?, ?)", indexed)
+        connection.execute("DELETE FROM selections WHERE path NOT IN (SELECT path FROM files)")
         connection.execute("INSERT OR REPLACE INTO metadata(key, value) VALUES ('last_refreshed', ?)", (str(refreshed_at),))
         connection.execute("INSERT OR REPLACE INTO metadata(key, value) VALUES ('roots', ?)", (json.dumps(roots),))
     return {"ok": True, "fileCount": len(indexed), "lastRefreshed": refreshed_at}
+
+
+def record_selection(message: dict[str, Any]) -> dict[str, Any]:
+    path = message.get("path")
+    if not isinstance(path, str) or not os.path.isabs(path):
+        return {"ok": False, "error": "文件路径不正确。"}
+    try:
+        with open_index() as connection:
+            exists = connection.execute("SELECT 1 FROM files WHERE path = ?", (path,)).fetchone()
+            if not exists:
+                return {"ok": False, "error": "文件不在当前搜索索引中。"}
+            connection.execute(
+                "INSERT INTO selections(path, count, last_selected) VALUES (?, 1, ?) "
+                "ON CONFLICT(path) DO UPDATE SET count = count + 1, last_selected = excluded.last_selected",
+                (path, time.time()),
+            )
+            count = connection.execute("SELECT count FROM selections WHERE path = ?", (path,)).fetchone()[0]
+        return {"ok": True, "count": count}
+    except sqlite3.Error as error:
+        return {"ok": False, "error": f"无法保存选择记录：{error}"}
+
+
+def relevance_rank(filename: str, query: str) -> int:
+    normalized_filename = filename.casefold()
+    normalized_query = query.casefold()
+    filename_stem = Path(filename).stem.casefold()
+    query_stem = Path(query).stem.casefold() if normalized_query.endswith(".md") else normalized_query
+    if normalized_filename == normalized_query:
+        return 0
+    if filename_stem == query_stem:
+        return 1
+    if filename_stem.startswith(query_stem):
+        return 2
+    if query_stem in re.split(r"[_\-\s.]+", filename_stem):
+        return 3
+    return 4
 
 
 def configure(message: dict[str, Any]) -> dict[str, Any]:
@@ -162,20 +200,26 @@ def search(message: dict[str, Any]) -> dict[str, Any]:
             return refreshed
     try:
         with open_index() as connection:
-            records = connection.execute("SELECT path, filename FROM files").fetchall()
+            records = connection.execute(
+                "SELECT files.path, files.filename, COALESCE(selections.count, 0) "
+                "FROM files LEFT JOIN selections ON selections.path = files.path"
+            ).fetchall()
     except sqlite3.Error as error:
         return {"ok": False, "error": f"无法读取搜索索引：{error}"}
 
-    found: list[str] = []
+    found: list[tuple[str, str, int]] = []
     normalized_query = query.casefold()
-    for path, filename in records:
+    for path, filename, selection_count in records:
         target = path if regex_target == "path" else filename
         matched = bool(matcher.search(target)) if matcher else normalized_query in filename.casefold()
         if matched:
-            found.append(path)
+            found.append((path, filename, selection_count))
 
-    found.sort(key=str.casefold)
-    return {"ok": True, "paths": found[:limit]}
+    if regex_enabled:
+        found.sort(key=lambda item: (-item[2], item[0].casefold()))
+    else:
+        found.sort(key=lambda item: (relevance_rank(item[1], query), -item[2], len(item[1]), item[0].casefold()))
+    return {"ok": True, "paths": [path for path, _, _ in found[:limit]]}
 
 
 def handle(message: dict[str, Any]) -> dict[str, Any]:
@@ -188,6 +232,8 @@ def handle(message: dict[str, Any]) -> dict[str, Any]:
         return search(message)
     if action == "refreshIndex":
         return refresh_index()
+    if action == "recordSelection":
+        return record_selection(message)
     return {"ok": False, "error": "不支持的操作。"}
 
 
