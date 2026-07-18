@@ -27,7 +27,7 @@ jobs:
         run: |
           gh release create "$RELEASE_TAG" \
             dist/local-markdown-search-chrome-extension.zip \
-            dist/local-markdown-search-native-host-macos.zip \
+            dist/local-markdown-search-native-host.zip \
             --repo "$GITHUB_REPOSITORY" \
             --title "$RELEASE_TAG" \
             --generate-notes

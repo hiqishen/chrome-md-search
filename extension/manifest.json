@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Local Markdown Search",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Search local Markdown files from Chrome's address bar.",
   "permissions": ["nativeMessaging", "storage", "tabs", "alarms"],
   "action": {

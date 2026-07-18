@@ -13,7 +13,14 @@ import sys
 import time
 from typing import Any
 
-CONFIG_PATH = Path.home() / "Library" / "Application Support" / "LocalMarkdownSearch" / "config.json"
+if sys.platform == "darwin":
+    APP_DATA_DIR = Path.home() / "Library" / "Application Support" / "LocalMarkdownSearch"
+elif sys.platform == "win32":
+    APP_DATA_DIR = Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local")) / "LocalMarkdownSearch"
+else:
+    APP_DATA_DIR = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "LocalMarkdownSearch"
+
+CONFIG_PATH = APP_DATA_DIR / "config.json"
 INDEX_PATH = CONFIG_PATH.with_name("index.sqlite3")
 DEFAULT_MAX_RESULTS = 20
 MAX_RESULTS = 100

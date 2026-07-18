@@ -24,11 +24,18 @@ function escapeOmniboxText(value) {
 }
 
 function toFileUrl(path) {
-  return `file://${encodeURI(path).replace(/#/g, "%23")}`;
+  const normalizedPath = path.replace(/\\/g, "/");
+  const prefix = /^[A-Za-z]:\//.test(normalizedPath) ? "file:///" : "file://";
+  return `${prefix}${encodeURI(normalizedPath).replace(/#/g, "%23")}`;
 }
 
 function fromFileUrl(url) {
-  return decodeURIComponent(new URL(url).pathname);
+  const path = decodeURIComponent(new URL(url).pathname);
+  return /^\/[A-Za-z]:\//.test(path) ? path.slice(1).replace(/\//g, "\\") : path;
+}
+
+function fileName(path) {
+  return path.replace(/\\/g, "/").split("/").pop();
 }
 
 async function getSearchOptions() {
@@ -83,7 +90,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
 
     suggest(result.paths.map((path) => ({
       content: toFileUrl(path),
-      description: `<match>${escapeOmniboxText(path.split("/").pop())}</match><dim> — ${escapeOmniboxText(path)}</dim>`
+      description: `<match>${escapeOmniboxText(fileName(path))}</match><dim> — ${escapeOmniboxText(path)}</dim>`
     })));
   } catch (error) {
     if (requestId !== latestOmniboxRequest) return;

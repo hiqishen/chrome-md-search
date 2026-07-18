@@ -20,8 +20,8 @@ fi
 )
 (
   cd "$native_host_dir"
-  zip -qr "$dist_dir/local-markdown-search-native-host-macos.zip" . -x '*.DS_Store' '__pycache__/*' '*.pyc'
+  zip -qr "$dist_dir/local-markdown-search-native-host.zip" . -x '*.DS_Store' '__pycache__/*' '*.pyc'
 )
 
 print "已生成发布包："
-shasum -a 256 "$dist_dir"/*.zip
+LC_ALL=C /usr/bin/shasum -a 256 "$dist_dir"/*.zip

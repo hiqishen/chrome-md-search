@@ -33,7 +33,7 @@ function renderResults(paths) {
     });
     const name = document.createElement("span");
     name.className = "filename";
-    name.textContent = path.split("/").pop();
+    name.textContent = path.replace(/\\/g, "/").split("/").pop();
     const fullPath = document.createElement("span");
     fullPath.className = "path";
     fullPath.textContent = path;
