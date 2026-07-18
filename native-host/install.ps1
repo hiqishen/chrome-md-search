@@ -12,15 +12,16 @@ if ($UseUv -and $PythonPath) {
 
 $hostName = 'com.local.md_search'
 $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-$hostScript = Join-Path $scriptDirectory 'native_host.py'
+$sourceHostScript = Join-Path $scriptDirectory 'native_host.py'
 $appDataDirectory = Join-Path $env:LOCALAPPDATA 'LocalMarkdownSearch'
+$hostScript = Join-Path $appDataDirectory 'native_host.py'
 $launcherPath = Join-Path $appDataDirectory 'run_native_host.cmd'
 $manifestDirectory = Join-Path $appDataDirectory 'NativeMessagingHosts'
 $manifestPath = Join-Path $manifestDirectory "$hostName.json"
 $registryPath = "HKCU:\Software\Google\Chrome\NativeMessagingHosts\$hostName"
 
-if (-not (Test-Path $hostScript)) {
-  throw "未找到本机服务脚本：$hostScript"
+if (-not (Test-Path $sourceHostScript)) {
+  throw "未找到本机服务脚本：$sourceHostScript"
 }
 
 if ($UseUv -or -not $PythonPath) {
@@ -49,6 +50,7 @@ if ($UseUv -or -not $PythonPath) {
 }
 
 New-Item -ItemType Directory -Force -Path $appDataDirectory, $manifestDirectory | Out-Null
+Copy-Item -Force -Path $sourceHostScript -Destination $hostScript
 $launcherContent = "@echo off`r`n$launcherCommand`r`n"
 [System.IO.File]::WriteAllText($launcherPath, $launcherContent, [System.Text.UTF8Encoding]::new($false))
 

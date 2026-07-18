@@ -43,12 +43,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 script_dir="${0:A:h}"
-host_path="$script_dir/native_host.py"
 app_data_dir="$HOME/Library/Application Support/LocalMarkdownSearch"
+source_host_path="$script_dir/native_host.py"
+host_path="$app_data_dir/native_host.py"
 launcher_path="$app_data_dir/run_native_host.sh"
 manifest_dir="${CHROME_USER_DATA_DIR:-$HOME/Library/Application Support/Google/Chrome}/NativeMessagingHosts"
 manifest_path="$manifest_dir/com.local.md_search.json"
 mkdir -p "$app_data_dir" "$manifest_dir"
+[[ -f "$source_host_path" ]] || { print -u2 "未找到本机服务脚本：$source_host_path"; exit 1; }
+cp "$source_host_path" "$host_path"
 
 if [[ "$runtime" == "uv" ]]; then
   uv_path="$(command -v uv || true)"

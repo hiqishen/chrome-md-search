@@ -22,9 +22,11 @@ fi
 
 "$script_dir/install.sh" --uv
 
-folder="$(/usr/bin/osascript -e 'POSIX path of (choose folder with prompt "选择要搜索 Markdown 文件的目录（可稍后在扩展弹窗中更改）")' 2>/dev/null || true)"
-if [[ -n "$folder" ]]; then
-  "$uv_path" run --no-project --python 3.12 python - "$folder" <<'PY'
+config_path="$HOME/Library/Application Support/LocalMarkdownSearch/config.json"
+if [[ ! -f "$config_path" ]]; then
+  folder="$(/usr/bin/osascript -e 'POSIX path of (choose folder with prompt "选择要搜索 Markdown 文件的目录（可稍后在扩展弹窗中更改）")' 2>/dev/null || true)"
+  if [[ -n "$folder" ]]; then
+    "$uv_path" run --no-project --python 3.12 python - "$folder" <<'PY'
 import sys
 import native_host
 
@@ -33,6 +35,7 @@ if not result["ok"]:
     raise SystemExit(result["error"])
 print(f"已建立索引：{result['fileCount']} 个 Markdown 文件")
 PY
+  fi
 fi
 
 /usr/bin/open -a "Google Chrome" "chrome://extensions" 2>/dev/null || true

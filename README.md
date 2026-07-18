@@ -11,7 +11,7 @@
 3. 打开解压后的 `local-markdown-search-native-host` 文件夹：
    - macOS：双击 `setup-macos.command`，如系统阻止，右键选择“打开”。
    - Windows：双击 `setup-windows.cmd`。
-4. 安装程序会在需要时自动安装 `uv` 和 Python 3.12，并让你选择一个要搜索的目录。完成后点击扩展图标即可使用。
+4. 安装程序会在需要时自动安装 `uv` 和 Python 3.12。仅首次安装时会让你选择一个要搜索的目录；以后重新运行会保留现有目录和索引，不再弹出目录选择。完成后点击扩展图标即可使用。
 
 首次安装会下载 Python 3.12，取决于网络速度，可能需要几十秒。以后不再重复下载。
 
@@ -53,7 +53,7 @@ cd native-host
 
 | 内容 | macOS | Windows |
 | --- | --- | --- |
-| SQLite 索引、搜索目录、选择次数、uv 启动器 | `~/Library/Application Support/LocalMarkdownSearch/` | `%LOCALAPPDATA%\LocalMarkdownSearch\` |
+| SQLite 索引、搜索目录、选择次数、本机服务与 uv 启动器 | `~/Library/Application Support/LocalMarkdownSearch/` | `%LOCALAPPDATA%\LocalMarkdownSearch\` |
 | Chrome Native Messaging 注册 | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/` | `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.local.md_search` |
 
 SQLite 数据库文件名为 `index.sqlite3`；配置为 `config.json`。这些内容均只保存在本机，不会提交到 Git 或上传。

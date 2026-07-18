@@ -14,13 +14,16 @@ if (-not $uv) {
 
 & "$scriptDirectory\install.ps1" -UseUv
 
-Add-Type -AssemblyName System.Windows.Forms
-$dialog = New-Object System.Windows.Forms.FolderBrowserDialog
-$dialog.Description = '选择要搜索 Markdown 文件的目录（可稍后在扩展弹窗中更改）'
-if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
-  $configureScript = 'import sys, native_host; result = native_host.configure({"roots": [sys.argv[1]], "includeHidden": False}); print(result); raise SystemExit(0 if result["ok"] else 1)'
-  & $uv.Source run --no-project --python 3.12 python -c $configureScript $dialog.SelectedPath
-  if ($LASTEXITCODE -ne 0) { throw '目录索引创建失败。' }
+$configPath = Join-Path $env:LOCALAPPDATA 'LocalMarkdownSearch\config.json'
+if (-not (Test-Path $configPath)) {
+  Add-Type -AssemblyName System.Windows.Forms
+  $dialog = New-Object System.Windows.Forms.FolderBrowserDialog
+  $dialog.Description = '选择要搜索 Markdown 文件的目录（可稍后在扩展弹窗中更改）'
+  if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+    $configureScript = 'import sys, native_host; result = native_host.configure({"roots": [sys.argv[1]], "includeHidden": False}); print(result); raise SystemExit(0 if result["ok"] else 1)'
+    & $uv.Source run --no-project --python 3.12 python -c $configureScript $dialog.SelectedPath
+    if ($LASTEXITCODE -ne 0) { throw '目录索引创建失败。' }
+  }
 }
 
 Start-Process 'chrome://extensions' 2>$null
