@@ -2,6 +2,7 @@ const NATIVE_HOST = "com.local.md_search";
 const MAX_RESULTS = 20;
 const INDEX_REFRESH_ALARM = "refresh-markdown-index";
 const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
+const NO_RESULT_CONTENT = "local-markdown-search:no-result";
 let latestOmniboxRequest = 0;
 
 function sendNativeMessage(message) {
@@ -69,7 +70,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
 
   try {
     const options = await getSearchOptions();
-    chrome.omnibox.setDefaultSuggestion({ description: `正在搜索 <match>${escapeOmniboxText(query)}</match>…` });
+    await chrome.omnibox.setDefaultSuggestion({ description: `正在搜索 <match>${escapeOmniboxText(query)}</match>…` });
 
     const result = await sendNativeMessage({
       action: "search",
@@ -81,20 +82,24 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
     if (requestId !== latestOmniboxRequest) return;
 
     if (!result.ok) {
-      chrome.omnibox.setDefaultSuggestion({ description: escapeOmniboxText(result.error) });
+      await chrome.omnibox.setDefaultSuggestion({ description: escapeOmniboxText(result.error) });
       suggest([]);
       return;
     }
 
     const countText = result.paths.length ? `搜索完成：找到 ${result.paths.length} 个文件` : "搜索完成：未找到匹配文件";
-    chrome.omnibox.setDefaultSuggestion({ description: countText });
+    await chrome.omnibox.setDefaultSuggestion({ description: countText });
+    if (!result.paths.length) {
+      suggest([{ content: NO_RESULT_CONTENT, description: "<dim>没有匹配的 Markdown 文件</dim>" }]);
+      return;
+    }
     suggest(result.paths.map((path) => ({
       content: viewerUrl(path),
       description: `<match>${escapeOmniboxText(fileName(path))}</match><dim> — ${escapeOmniboxText(path)}</dim>`
     })));
   } catch (error) {
     if (requestId !== latestOmniboxRequest) return;
-    chrome.omnibox.setDefaultSuggestion({
+    await chrome.omnibox.setDefaultSuggestion({
       description: `无法完成搜索：${escapeOmniboxText(error.message)}`
     });
     suggest([]);
@@ -102,6 +107,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
 });
 
 chrome.omnibox.onInputEntered.addListener((content) => {
+  if (content === NO_RESULT_CONTENT) return;
   if (content.startsWith(chrome.runtime.getURL("viewer.html"))) {
     const path = new URL(content).searchParams.get("path");
     if (path) sendNativeMessage({ action: "recordSelection", path }).catch(() => {});
