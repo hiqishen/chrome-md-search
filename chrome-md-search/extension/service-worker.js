@@ -27,6 +27,10 @@ function toFileUrl(path) {
   return `file://${encodeURI(path).replace(/#/g, "%23")}`;
 }
 
+function fromFileUrl(url) {
+  return decodeURIComponent(new URL(url).pathname);
+}
+
 async function getSearchOptions() {
   const defaults = { regexEnabled: false, regexTarget: "filename" };
   return chrome.storage.sync.get(defaults);
@@ -92,6 +96,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
 
 chrome.omnibox.onInputEntered.addListener((content) => {
   if (content.startsWith("file://")) {
+    sendNativeMessage({ action: "recordSelection", path: fromFileUrl(content) }).catch(() => {});
     chrome.tabs.update({ url: content });
   }
 });

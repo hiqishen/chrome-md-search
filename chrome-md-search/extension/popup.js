@@ -27,6 +27,7 @@ function renderResults(paths) {
     link.addEventListener("click", async (event) => {
       event.preventDefault();
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      sendNativeMessage({ action: "recordSelection", path }).catch(() => {});
       await chrome.tabs.update(activeTab.id, { url: link.href });
       window.close();
     });
