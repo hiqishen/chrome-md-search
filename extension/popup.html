@@ -25,7 +25,10 @@
           <option value="filename">文件名</option>
           <option value="path">完整路径</option>
         </select>
+        <label for="max-results">最多结果：</label>
+        <input id="max-results" type="number" min="1" max="100" step="1" value="20">
       </div>
+      <p class="regex-hint">正则模式会匹配 <code>md</code> 后的全部输入；例如匹配所有 Markdown：<code>.*\.md</code>（<code>*.md</code> 不是有效正则）。</p>
 
       <label for="query">搜索</label>
       <div class="query-row">

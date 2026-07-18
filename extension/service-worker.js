@@ -1,8 +1,9 @@
 const NATIVE_HOST = "com.local.md_search";
-const MAX_RESULTS = 20;
 const INDEX_REFRESH_ALARM = "refresh-markdown-index";
 const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
 const NO_RESULT_CONTENT = "local-markdown-search:no-result";
+const DEFAULT_MAX_RESULTS = 20;
+const MAX_RESULTS = 100;
 let latestOmniboxRequest = 0;
 
 function sendNativeMessage(message) {
@@ -38,8 +39,15 @@ function fileName(path) {
 }
 
 async function getSearchOptions() {
-  const defaults = { regexEnabled: false, regexTarget: "filename" };
-  return chrome.storage.sync.get(defaults);
+  const defaults = { regexEnabled: false, regexTarget: "filename", maxResults: DEFAULT_MAX_RESULTS };
+  const options = await chrome.storage.sync.get(defaults);
+  return { ...options, maxResults: normalizeMaxResults(options.maxResults) };
+}
+
+function normalizeMaxResults(value) {
+  const number = Number(value);
+  if (!Number.isInteger(number)) return DEFAULT_MAX_RESULTS;
+  return Math.max(1, Math.min(number, MAX_RESULTS));
 }
 
 function scheduleIndexRefresh() {
@@ -77,7 +85,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
       query,
       regexEnabled: options.regexEnabled,
       regexTarget: options.regexTarget,
-      maxResults: MAX_RESULTS
+      maxResults: options.maxResults
     });
     if (requestId !== latestOmniboxRequest) return;
 

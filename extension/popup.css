@@ -15,6 +15,8 @@ button { cursor: pointer; font: inherit; padding: 7px 10px; }
 .options label:first-child { margin-right: 8px; }
 .options input { width: auto; }
 .options select { width: auto; }
+#max-results { padding: 4px; width: 58px; }
+.regex-hint { color: #777; font-size: 12px; margin: 6px 0 0; }
 .query-row { display: flex; gap: 7px; }
 .query-row button { flex: none; }
 #status { color: #a33; min-height: 1.45em; margin: 8px 0; }

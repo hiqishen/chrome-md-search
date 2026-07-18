@@ -4,12 +4,15 @@ const includeHidden = document.querySelector("#include-hidden");
 const query = document.querySelector("#query");
 const regexEnabled = document.querySelector("#regex-enabled");
 const regexTarget = document.querySelector("#regex-target");
+const maxResults = document.querySelector("#max-results");
 const status = document.querySelector("#status");
 const results = document.querySelector("#results");
 const indexStatus = document.querySelector("#index-status");
 const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
 let searchTimer;
 let latestSearchRequest = 0;
+const DEFAULT_MAX_RESULTS = 20;
+const MAX_RESULTS = 100;
 
 function sendNativeMessage(message) {
   const response = new Promise((resolve, reject) => {
@@ -48,6 +51,12 @@ function renderResults(paths) {
   }));
 }
 
+function normalizeMaxResults(value) {
+  const number = Number(value);
+  if (!Number.isInteger(number)) return DEFAULT_MAX_RESULTS;
+  return Math.max(1, Math.min(number, MAX_RESULTS));
+}
+
 function renderIndexStatus(config) {
   if (!config.lastRefreshed) {
     indexStatus.textContent = "索引尚未建立";
@@ -60,7 +69,7 @@ function renderIndexStatus(config) {
 async function load() {
   const [config, preferences] = await Promise.all([
     sendNativeMessage({ action: "getConfig" }),
-    chrome.storage.sync.get({ regexEnabled: false, regexTarget: "filename" })
+    chrome.storage.sync.get({ regexEnabled: false, regexTarget: "filename", maxResults: DEFAULT_MAX_RESULTS })
   ]);
   if (!config.ok) throw new Error(config.error);
   roots.value = config.roots.join("\n");
@@ -69,13 +78,16 @@ async function load() {
   regexEnabled.checked = preferences.regexEnabled;
   regexTarget.value = preferences.regexTarget;
   regexTarget.disabled = !regexEnabled.checked;
+  maxResults.value = normalizeMaxResults(preferences.maxResults);
 }
 
 async function savePreferences() {
   regexTarget.disabled = !regexEnabled.checked;
+  maxResults.value = normalizeMaxResults(maxResults.value);
   await chrome.storage.sync.set({
     regexEnabled: regexEnabled.checked,
-    regexTarget: regexTarget.value
+    regexTarget: regexTarget.value,
+    maxResults: Number(maxResults.value)
   });
 }
 
@@ -107,7 +119,7 @@ async function search() {
   status.className = "searching";
   const response = await sendNativeMessage({
     action: "search", query: value, regexEnabled: regexEnabled.checked,
-    regexTarget: regexTarget.value, maxResults: 50
+    regexTarget: regexTarget.value, maxResults: normalizeMaxResults(maxResults.value)
   });
   if (requestId !== latestSearchRequest) return;
   if (!response.ok) throw new Error(response.error);
@@ -138,4 +150,5 @@ query.addEventListener("input", () => {
 });
 regexEnabled.addEventListener("change", () => savePreferences());
 regexTarget.addEventListener("change", () => savePreferences());
+maxResults.addEventListener("change", () => savePreferences());
 load().catch((error) => { showError(new Error(`初始化失败：${error.message}`)); });
