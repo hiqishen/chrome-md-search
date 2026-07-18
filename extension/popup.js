@@ -15,6 +15,14 @@ const DEFAULT_MAX_RESULTS = 20;
 // 与本机服务的保护上限一致，避免一次渲染过多完整文件路径。
 const MAX_CONFIGURABLE_RESULTS = 100;
 
+function fileUrl(path) {
+  // URL 会正确转义空格、#、? 等文件名中的特殊字符。
+  const normalizedPath = path.replace(/\\/g, "/");
+  const url = new URL("file://");
+  url.pathname = /^[A-Za-z]:\//.test(normalizedPath) ? `/${normalizedPath}` : normalizedPath;
+  return url.href;
+}
+
 function sendNativeMessage(message) {
   const response = new Promise((resolve, reject) => {
     chrome.runtime.sendNativeMessage(NATIVE_HOST, message, (response) => {
@@ -32,7 +40,7 @@ function renderResults(paths) {
   results.replaceChildren(...paths.map((path) => {
     const item = document.createElement("li");
     const link = document.createElement("a");
-    link.href = chrome.runtime.getURL(`viewer.html?path=${encodeURIComponent(path)}`);
+    link.href = fileUrl(path);
     link.addEventListener("click", async (event) => {
       event.preventDefault();
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });

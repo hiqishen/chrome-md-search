@@ -4,10 +4,10 @@
 
 ## 最简单的安装方式
 
-不需要安装 Python、打开终端、复制扩展 ID，或开启“允许访问文件网址”。
+不需要安装 Python、打开终端或复制扩展 ID。为了让结果直接以本地文件 URL 在 Chrome 中打开，需要开启一次“允许访问文件网址”。
 
 1. 在 [GitHub Releases](https://github.com/hiqishen/chrome-md-search/releases) 下载并解压最新的两个文件：`local-markdown-search-chrome-extension.zip` 与 `local-markdown-search-native-host.zip`。
-2. Chrome 打开 `chrome://extensions`，开启右上角“开发者模式”，点击“加载已解压的扩展程序”，选择解压后的 `local-markdown-search-chrome-extension` 文件夹。
+2. Chrome 打开 `chrome://extensions`，开启右上角“开发者模式”，点击“加载已解压的扩展程序”，选择解压后的 `local-markdown-search-chrome-extension` 文件夹；再点击扩展的“详情”，开启“允许访问文件网址”。
 3. 打开解压后的 `local-markdown-search-native-host` 文件夹：
    - macOS：双击 `setup-macos.command`，如系统阻止，右键选择“打开”。
    - Windows：双击 `setup-windows.cmd`。
@@ -42,7 +42,7 @@ cd native-host
 
 ## 使用
 
-- 地址栏：输入 `md tmux`，在候选项中选择文件，Chrome 会在当前标签页显示 Markdown 原文。
+- 地址栏：输入 `md tmux`，在候选项中选择文件，Chrome 会在当前标签页直接打开对应的 `file:///` 本地 Markdown 文件。
 - 弹窗：输入关键词即实时搜索；搜索期间会显示加载提示。
 - 普通模式不区分大小写，按文件名包含匹配；正则模式使用 Python `re` 语法，可匹配文件名或完整路径。例如所有 Markdown 文件写作 `.*\.md`，而不是 `*.md`。
 - “最多结果”可在弹窗设置，默认 20，范围 1–100；地址栏与弹窗共用该设置。100 是单次返回的保护上限，用于避免大量完整路径拖慢 Native Messaging 与 Chrome 候选渲染，不会限制 SQLite 索引中的文件总数。

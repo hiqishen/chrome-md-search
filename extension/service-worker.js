@@ -31,8 +31,18 @@ function escapeOmniboxText(value) {
   })[character]);
 }
 
-function viewerUrl(path) {
-  return chrome.runtime.getURL(`viewer.html?path=${encodeURIComponent(path)}`);
+function fileUrl(path) {
+  // URL 会正确转义空格、#、? 等文件名中的特殊字符。
+  const normalizedPath = path.replace(/\\/g, "/");
+  const url = new URL("file://");
+  url.pathname = /^[A-Za-z]:\//.test(normalizedPath) ? `/${normalizedPath}` : normalizedPath;
+  return url.href;
+}
+
+function filePathFromUrl(value) {
+  const path = decodeURIComponent(new URL(value).pathname);
+  // Windows 的 file URL 路径以 /C:/ 开头，恢复为本机服务使用的路径格式。
+  return /^\/[A-Za-z]:\//.test(path) ? path.slice(1).replace(/\//g, "\\") : path;
 }
 
 function fileName(path) {
@@ -103,7 +113,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
       return;
     }
     suggest(result.paths.map((path) => ({
-      content: viewerUrl(path),
+      content: fileUrl(path),
       description: `<match>${escapeOmniboxText(fileName(path))}</match><dim> — ${escapeOmniboxText(path)}</dim>`
     })));
   } catch (error) {
@@ -117,8 +127,8 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
 
 chrome.omnibox.onInputEntered.addListener((content) => {
   if (content === NO_RESULT_CONTENT) return;
-  if (content.startsWith(chrome.runtime.getURL("viewer.html"))) {
-    const path = new URL(content).searchParams.get("path");
+  if (content.startsWith("file:")) {
+    const path = filePathFromUrl(content);
     if (path) sendNativeMessage({ action: "recordSelection", path }).catch(() => {});
     chrome.tabs.update({ url: content });
   }
