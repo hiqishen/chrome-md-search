@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>本地 Markdown 搜索</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <h1>本地 Markdown 搜索</h1>
+      <label for="roots">搜索目录（每行一个绝对路径）</label>
+      <textarea id="roots" rows="4" placeholder="/Users/you/Documents/notes"></textarea>
+      <label class="checkbox-option"><input id="include-hidden" type="checkbox"> 包含隐藏目录（如 .venv）</label>
+      <button id="save-roots">保存目录</button>
+      <div class="index-row">
+        <span id="index-status">正在读取索引状态…</span>
+        <button id="refresh-index">立即刷新</button>
+      </div>
+
+      <div class="options">
+        <label><input id="regex-enabled" type="checkbox"> 使用正则表达式</label>
+        <label for="regex-target">正则匹配：</label>
+        <select id="regex-target">
+          <option value="filename">文件名</option>
+          <option value="path">完整路径</option>
+        </select>
+      </div>
+
+      <label for="query">搜索</label>
+      <div class="query-row">
+        <input id="query" type="search" placeholder="例如：tmux.md" autocomplete="off">
+        <button id="search">搜索</button>
+      </div>
+      <p id="status" role="status"></p>
+      <ul id="results"></ul>
+      <p class="hint">地址栏也可输入：<code>md tmux.md</code></p>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
