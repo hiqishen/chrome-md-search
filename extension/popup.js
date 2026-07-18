@@ -23,7 +23,7 @@ function renderResults(paths) {
   results.replaceChildren(...paths.map((path) => {
     const item = document.createElement("li");
     const link = document.createElement("a");
-    link.href = `file://${encodeURI(path).replace(/#/g, "%23")}`;
+    link.href = chrome.runtime.getURL(`viewer.html?path=${encodeURIComponent(path)}`);
     link.addEventListener("click", async (event) => {
       event.preventDefault();
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });

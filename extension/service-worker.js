@@ -23,15 +23,8 @@ function escapeOmniboxText(value) {
   })[character]);
 }
 
-function toFileUrl(path) {
-  const normalizedPath = path.replace(/\\/g, "/");
-  const prefix = /^[A-Za-z]:\//.test(normalizedPath) ? "file:///" : "file://";
-  return `${prefix}${encodeURI(normalizedPath).replace(/#/g, "%23")}`;
-}
-
-function fromFileUrl(url) {
-  const path = decodeURIComponent(new URL(url).pathname);
-  return /^\/[A-Za-z]:\//.test(path) ? path.slice(1).replace(/\//g, "\\") : path;
+function viewerUrl(path) {
+  return chrome.runtime.getURL(`viewer.html?path=${encodeURIComponent(path)}`);
 }
 
 function fileName(path) {
@@ -89,7 +82,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
     }
 
     suggest(result.paths.map((path) => ({
-      content: toFileUrl(path),
+      content: viewerUrl(path),
       description: `<match>${escapeOmniboxText(fileName(path))}</match><dim> — ${escapeOmniboxText(path)}</dim>`
     })));
   } catch (error) {
@@ -102,8 +95,9 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
 });
 
 chrome.omnibox.onInputEntered.addListener((content) => {
-  if (content.startsWith("file://")) {
-    sendNativeMessage({ action: "recordSelection", path: fromFileUrl(content) }).catch(() => {});
+  if (content.startsWith(chrome.runtime.getURL("viewer.html"))) {
+    const path = new URL(content).searchParams.get("path");
+    if (path) sendNativeMessage({ action: "recordSelection", path }).catch(() => {});
     chrome.tabs.update({ url: content });
   }
 });

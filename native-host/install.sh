@@ -2,17 +2,17 @@
 set -euo pipefail
 
 usage() {
-  print "用法：$0 <Chrome 扩展 ID> [--python <解释器绝对路径> | --uv]"
+  print "用法：$0 [Chrome 扩展 ID] [--python <解释器绝对路径> | --uv]"
+  print "不填扩展 ID 时，使用随发布包固定的扩展 ID。"
   print "也可通过 LOCAL_MARKDOWN_SEARCH_PYTHON 指定 Python 路径。"
 }
 
-if [[ $# -lt 1 ]]; then
-  usage
-  exit 1
+default_extension_id="oohegnkhocdppcbgmnoifimpnkmbnfcc"
+extension_id="$default_extension_id"
+if [[ $# -gt 0 && "$1" != --* ]]; then
+  extension_id="$1"
+  shift
 fi
-
-extension_id="$1"
-shift
 if [[ ${#extension_id} -ne 32 || "$extension_id" == *[^a-p]* ]]; then
   print "Chrome 扩展 ID 格式不正确。"
   exit 1

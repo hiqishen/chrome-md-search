@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Local Markdown Search",
-  "version": "1.0.1",
+  "version": "1.0.2",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA275Y7tey3+XXXsSomixPVn0JdIN9tSx3/9TvOt3VvBPvWr0eY45/zUfUp9hy9eStiaIfKL4W5IJz+6tgqbxqTZGOlGuAENCT6F27qwJ1VoQE5ghlLVt1FKOu0CuTqeFNQW5er86VMc6d4Kc46YDxlFmyAyRoAlPzbuQDuctBNE14XOFJRtv0/S8N1jI6GE9KXBHBt8JrY3G8AR+tbH3wCW1zb66zLjpyrO5XperdRQW9FHddGd9sPfew2yhDhEuP1pgFnEt1wqccjr7vQePOSDI5vTDIwwbdcJmzgszaeQAIeI3Z2VOMExDGIunIn2UpZ1GavF5hZVgWIaD1V2zkFwIDAQAB",
   "description": "Search local Markdown files from Chrome's address bar.",
   "permissions": ["nativeMessaging", "storage", "tabs", "alarms"],
   "action": {

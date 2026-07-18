@@ -24,6 +24,7 @@ CONFIG_PATH = APP_DATA_DIR / "config.json"
 INDEX_PATH = CONFIG_PATH.with_name("index.sqlite3")
 DEFAULT_MAX_RESULTS = 20
 MAX_RESULTS = 100
+MAX_VIEW_FILE_SIZE = 5 * 1024 * 1024
 
 
 def read_message() -> dict[str, Any] | None:
@@ -128,7 +129,10 @@ def refresh_index() -> dict[str, Any]:
 
 def record_selection(message: dict[str, Any]) -> dict[str, Any]:
     path = message.get("path")
-    if not isinstance(path, str) or not os.path.isabs(path):
+    if not isinstance(path, str):
+        return {"ok": False, "error": "文件路径不正确。"}
+    path = os.path.realpath(os.path.expanduser(path))
+    if not os.path.isabs(path):
         return {"ok": False, "error": "文件路径不正确。"}
     try:
         with open_index() as connection:
@@ -144,6 +148,25 @@ def record_selection(message: dict[str, Any]) -> dict[str, Any]:
         return {"ok": True, "count": count}
     except sqlite3.Error as error:
         return {"ok": False, "error": f"无法保存选择记录：{error}"}
+
+
+def read_file(message: dict[str, Any]) -> dict[str, Any]:
+    path = message.get("path")
+    if not isinstance(path, str):
+        return {"ok": False, "error": "文件路径不正确。"}
+    path = os.path.realpath(os.path.expanduser(path))
+    if not os.path.isabs(path):
+        return {"ok": False, "error": "文件路径不正确。"}
+    try:
+        with open_index() as connection:
+            exists = connection.execute("SELECT 1 FROM files WHERE path = ?", (path,)).fetchone()
+        if not exists:
+            return {"ok": False, "error": "文件不在当前搜索索引中。"}
+        if os.path.getsize(path) > MAX_VIEW_FILE_SIZE:
+            return {"ok": False, "error": "文件超过 5 MB，无法在扩展内打开。"}
+        return {"ok": True, "path": path, "content": Path(path).read_text(encoding="utf-8", errors="replace")}
+    except OSError as error:
+        return {"ok": False, "error": f"无法读取文件：{error}"}
 
 
 def relevance_rank(filename: str, query: str) -> int:
@@ -241,6 +264,8 @@ def handle(message: dict[str, Any]) -> dict[str, Any]:
         return refresh_index()
     if action == "recordSelection":
         return record_selection(message)
+    if action == "readFile":
+        return read_file(message)
     return {"ok": False, "error": "不支持的操作。"}
 
 

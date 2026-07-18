@@ -1,7 +1,6 @@
 param(
-  [Parameter(Mandatory = $true)]
   [ValidatePattern('^[a-p]{32}$')]
-  [string]$ExtensionId,
+  [string]$ExtensionId = 'oohegnkhocdppcbgmnoifimpnkmbnfcc',
   [string]$PythonPath,
   [switch]$UseUv
 )
