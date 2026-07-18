@@ -5,7 +5,7 @@
 ## 安装
 
 1. 在 Chrome 打开 `chrome://extensions`，启用右上角“开发者模式”。
-2. 点击“加载已解压的扩展程序”，选择本仓库中的 `chrome-md-search/extension` 目录。
+2. 点击“加载已解压的扩展程序”，选择本仓库中的 `extension` 目录。
 3. 复制该扩展显示的 **ID**，在终端运行：
 
    ```zsh
@@ -50,6 +50,6 @@ rm "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.loc
 
 ## 自动发布
 
-执行 `zsh chrome-md-search/scripts/package.sh` 会生成扩展和 macOS 本机服务安装包。推送 `v*` 标签会由 GitHub Actions 自动创建 GitHub Release 并上传这两个包。
+执行 `zsh scripts/package.sh` 会生成扩展和 macOS 本机服务安装包。推送 `v*` 标签会由 GitHub Actions 自动创建 GitHub Release 并上传这两个包。
 
 用户可从 GitHub Release 下载扩展包，解压后在 `chrome://extensions` 开启开发者模式并选择“加载已解压的扩展程序”；随后下载、解压本机服务包，再按本说明运行 `install.sh`。
