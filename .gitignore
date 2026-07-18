@@ -12,6 +12,7 @@ __pycache__/
 *.sqlite3-wal
 
 # Chrome extension packaging output
+chrome-md-search/dist/
 *.crx
 *.pem
 
