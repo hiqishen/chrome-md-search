@@ -1,80 +1,112 @@
 # Local Markdown Search
 
-在 Chrome 地址栏输入 `md tmux.md` 或 `md tmux`，搜索用户指定目录中的本地 Markdown 文件。扩展和本机搜索服务都在本地运行，不上传文件内容、路径或搜索记录。
+一个本地运行的 Chrome Markdown 搜索工具。地址栏输入 `md tmux` 或 `md tmux.md`，即可从用户指定目录检索 Markdown 文件；扩展、本机索引和使用记录均不上传网络。
 
-## 从 GitHub 安装并绑定本机
+## 推荐运行时：uv + Python 3.12
 
-每台电脑都需要完成以下步骤。扩展不会自动绑定到任何人的电脑：本机服务注册时会只允许当前 Chrome 扩展 ID 调用，这是必要的安全限制。
+本机搜索服务默认由 [uv](https://docs.astral.sh/uv/) 启动，并固定使用 Python 3.12。uv 会在本机管理所需 Python，因此无需预装 Python，也避免不同电脑 Python 版本不一致。
 
-1. 克隆仓库或下载 GitHub Release：
+先安装 uv：
 
-   ```zsh
-   git clone git@github.com:hiqishen/chrome-md-search.git
-   cd chrome-md-search
-   ```
+| 系统 | 安装命令 |
+| --- | --- |
+| macOS | `brew install uv` |
+| Windows（PowerShell） | `winget install --id=astral-sh.uv -e` |
 
-2. 在 Chrome 打开 `chrome://extensions`，启用右上角“开发者模式”，点击“加载已解压的扩展程序”，选择本仓库中的 `extension` 目录。
+安装后重新打开终端，执行 `uv --version` 确认可用。首次启动搜索服务时，uv 可能下载 Python 3.12；之后会使用本地缓存。
 
-3. 复制扩展卡片显示的 **ID**。这个 ID 用于把本机搜索服务绑定到当前扩展实例。
+## 从 GitHub 安装
 
-4. 按操作系统注册本机服务。
+### 1. 下载源码
 
-### macOS
+```zsh
+git clone git@github.com:hiqishen/chrome-md-search.git
+cd chrome-md-search
+```
 
-需要 Python 3：
+也可以从 GitHub Release 下载并解压两个 ZIP：扩展包和本机服务包。
+
+### 2. 加载 Chrome 扩展
+
+1. 打开 `chrome://extensions`。
+2. 开启右上角“开发者模式”。
+3. 点击“加载已解压的扩展程序”，选择仓库中的 `extension` 目录。
+4. 复制扩展卡片上显示的 **ID**。
+5. 进入扩展“详情”，开启“允许访问文件网址”。
+
+### 3. 注册本机搜索服务
+
+扩展不会自动绑定到某台电脑。本机安装脚本会将 Native Messaging 服务只授权给上一步复制的 Extension ID；这是为了防止其他扩展调用本地文件搜索能力。
+
+#### macOS
 
 ```zsh
 cd native-host
 ./install.sh <扩展 ID>
 ```
 
-如果 Chrome 通过 `--user-data-dir` 使用自定义用户数据目录，请使用：
-
-```zsh
-CHROME_USER_DATA_DIR=/path/to/chrome-profile ./install.sh <扩展 ID>
-```
-
-### Windows
-
-需要安装 Python 3，并在安装时勾选 **Add Python to PATH**。在 PowerShell 中运行：
+#### Windows（PowerShell）
 
 ```powershell
 cd native-host
 PowerShell -ExecutionPolicy Bypass -File .\install.ps1 -ExtensionId <扩展 ID>
 ```
 
-脚本会在当前用户的 Windows 注册表中注册 Native Messaging host；不需要管理员权限。
+如果扩展被重新加载、重新安装，或 Chrome 显示的 ID 发生变化，请再次运行对应系统的安装命令。
 
-5. 在 `chrome://extensions` 的扩展详情中开启“允许访问文件网址”。
+### 使用指定 Python（可选）
 
-6. 点击扩展图标，在“搜索目录”中每行添加一个绝对路径并保存，例如：
+默认推荐 uv。若需使用公司环境或指定解释器，可在安装时固定其绝对路径；该路径会写入本机启动器，不依赖 Chrome 是否继承终端环境变量。
 
-   ```text
-   /Users/you/Documents/notes
-   C:\Users\you\Documents\notes
-   ```
+macOS：
 
-如果重新加载或重新安装扩展后出现“找不到本机服务”，请重新复制该扩展当前显示的 ID，并再次运行对应系统的安装脚本。
+```zsh
+./install.sh <扩展 ID> --python /absolute/path/to/python3
+# 或：LOCAL_MARKDOWN_SEARCH_PYTHON=/absolute/path/to/python3 ./install.sh <扩展 ID>
+```
+
+Windows：
+
+```powershell
+.\install.ps1 -ExtensionId <扩展 ID> -PythonPath C:\Python312\python.exe
+```
+
+若想显式指定使用 uv，可添加 `--uv`（macOS）或 `-UseUv`（Windows）。
+
+### 4. 配置搜索目录
+
+点击扩展图标，在“搜索目录”中每行添加一个绝对路径并保存，例如：
+
+```text
+/Users/you/Documents/notes
+C:\Users\you\Documents\notes
+```
+
+首次保存会建立本地 SQLite 索引；弹窗会显示索引状态。之后扩展每分钟自动刷新，也可以点击“立即刷新”。
 
 ## 使用
 
-- 地址栏：输入 `md tmux.md` 或 `md tmux`，在候选项中选择文件。
-- 弹窗：输入关键词即可实时搜索，也可点击“搜索”。
-- 普通模式不区分大小写，按文件名包含匹配；`tmux.md` 会找到 `003_tmux.md` 和 `003_doc_tmux.md`。
-- 开启“使用正则表达式”后，可以选择按文件名或完整路径匹配。示例：`^003_.*tmux\\.md$`。
-- 首次保存目录时会建立 SQLite 索引；扩展每分钟自动刷新一次，也可以在弹窗点击“立即刷新”。
-- 默认跳过 `.venv`、`.git` 等隐藏目录；如需检索它们，在弹窗勾选“包含隐藏目录”。
-- 文件被打开的次数会保存在本机索引中，并作为同等文本相关度下的排序权重。
+- 地址栏：输入 `md tmux`，在候选项中选择文件，Chrome 会在当前标签页打开它。
+- 弹窗：输入关键词即实时搜索；搜索期间会显示加载提示。
+- 普通模式不区分大小写，按文件名包含匹配；正则模式可匹配文件名或完整路径。
+- 默认排除 `.venv`、`.git` 等隐藏目录；可在弹窗勾选“包含隐藏目录”。
+- 文件被选择打开的次数保存在本机，并在相同文本相关度下作为排序权重。
 
-## 本机数据位置
+## 本机数据与绑定位置
 
-- macOS：`~/Library/Application Support/LocalMarkdownSearch/`
-- Windows：`%LOCALAPPDATA%\LocalMarkdownSearch\`
+| 内容 | macOS | Windows |
+| --- | --- | --- |
+| SQLite 索引、搜索目录、选择次数、uv 启动器 | `~/Library/Application Support/LocalMarkdownSearch/` | `%LOCALAPPDATA%\LocalMarkdownSearch\` |
+| Chrome Native Messaging 注册 | `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/` | `HKCU\Software\Google\Chrome\NativeMessagingHosts\com.local.md_search` |
 
-其中包含配置文件、SQLite 索引和选择次数；它们不会进入 Git 仓库或上传网络。
+SQLite 数据库文件名为 `index.sqlite3`；配置为 `config.json`。这些内容均只保存在本机，不会提交到 Git 或上传。
 
-## 自动发布
+## 发布维护
 
-执行 `zsh scripts/package.sh` 会生成扩展和 macOS 本机服务安装包。推送 `v*` 标签会由 GitHub Actions 自动创建 GitHub Release 并上传这两个包。
+执行以下命令会生成扩展 ZIP 和跨平台本机服务 ZIP：
 
-用户可从 GitHub Release 下载扩展包，解压后按照上述步骤加载 `extension` 目录；本机服务包也需下载、解压并执行对应系统的安装脚本。
+```zsh
+zsh scripts/package.sh
+```
+
+推送 `v*` 标签会由 GitHub Actions 自动创建 GitHub Release 并上传这两个包。
