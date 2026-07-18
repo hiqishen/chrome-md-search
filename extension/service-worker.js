@@ -1,10 +1,11 @@
 const NATIVE_HOST = "com.local.md_search";
 const MAX_RESULTS = 20;
 const INDEX_REFRESH_ALARM = "refresh-markdown-index";
+const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
 let latestOmniboxRequest = 0;
 
 function sendNativeMessage(message) {
-  return new Promise((resolve, reject) => {
+  const response = new Promise((resolve, reject) => {
     chrome.runtime.sendNativeMessage(NATIVE_HOST, message, (response) => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
@@ -13,6 +14,10 @@ function sendNativeMessage(message) {
       resolve(response);
     });
   });
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("本机服务超过 8 秒未响应，请确认已运行安装脚本。")), NATIVE_RESPONSE_TIMEOUT_MS);
+  });
+  return Promise.race([response, timeout]);
 }
 
 function escapeOmniboxText(value) {
@@ -81,6 +86,8 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
       return;
     }
 
+    const countText = result.paths.length ? `搜索完成：找到 ${result.paths.length} 个文件` : "搜索完成：未找到匹配文件";
+    chrome.omnibox.setDefaultSuggestion({ description: countText });
     suggest(result.paths.map((path) => ({
       content: viewerUrl(path),
       description: `<match>${escapeOmniboxText(fileName(path))}</match><dim> — ${escapeOmniboxText(path)}</dim>`
@@ -88,7 +95,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
   } catch (error) {
     if (requestId !== latestOmniboxRequest) return;
     chrome.omnibox.setDefaultSuggestion({
-      description: `无法连接本机搜索服务：${escapeOmniboxText(error.message)}`
+      description: `无法完成搜索：${escapeOmniboxText(error.message)}`
     });
     suggest([]);
   }

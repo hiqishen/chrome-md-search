@@ -7,16 +7,21 @@ const regexTarget = document.querySelector("#regex-target");
 const status = document.querySelector("#status");
 const results = document.querySelector("#results");
 const indexStatus = document.querySelector("#index-status");
+const NATIVE_RESPONSE_TIMEOUT_MS = 8000;
 let searchTimer;
 let latestSearchRequest = 0;
 
 function sendNativeMessage(message) {
-  return new Promise((resolve, reject) => {
+  const response = new Promise((resolve, reject) => {
     chrome.runtime.sendNativeMessage(NATIVE_HOST, message, (response) => {
       if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
       resolve(response);
     });
   });
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("本机服务超过 8 秒未响应，请确认已运行安装脚本。")), NATIVE_RESPONSE_TIMEOUT_MS);
+  });
+  return Promise.race([response, timeout]);
 }
 
 function renderResults(paths) {
